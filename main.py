@@ -1,5 +1,45 @@
 import pandas as pd
 import math
+import google.auth
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+
+def update_values(spreadsheet_id, range_name, value_input_option, _values):
+    """
+    Creates the batch_update the user has access to.
+    Load pre-authorized user credentials from the environment.
+    TODO(developer) - See https://developers.google.com/identity
+    for guides on implementing OAuth2 for the application.
+    """
+    creds, _ = google.auth.default()
+    # pylint: disable=maybe-no-member
+    try:
+        service = build("sheets", "v4", credentials=creds)
+        values = [
+            [
+                # Cell values ...
+            ],
+            # Additional rows ...
+        ]
+        body = {"values": values}
+        result = (
+            service.spreadsheets()
+            .values()
+            .update(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueInputOption=value_input_option,
+                body=body,
+            )
+            .execute()
+        )
+        print(f"{result.get('updatedCells')} cells updated.")
+        return result
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return error
+
 
 spreadsheet_id = "1YtiuDuzBsTLFPUnXHUEvHsr2E8CnaGElytNSU56yTK4"
 df = pd.read_csv(
@@ -42,6 +82,9 @@ df['Unnamed: 5'] = pd.DataFrame(col_p3)
 df['Unnamed: 6'] = pd.DataFrame(col_sit)
 df['Unnamed: 7'] = pd.DataFrame(col_final)
 
-df.to_csv(
-    f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=csv", sep=";", index=False)
+update_values(spreadsheet_id,
+              "A1:H27",
+              "USER_ENTERED",
+              df
+              )
 print(df)
